@@ -1,20 +1,21 @@
 package org.greenplum.pxf.service;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.util.ComparableVersion;
 import org.greenplum.pxf.api.model.OutputFormat;
 import org.greenplum.pxf.api.model.PluginConf;
-import org.greenplum.pxf.api.model.ProtocolHandler;
 import org.greenplum.pxf.api.model.RequestContext;
 import org.greenplum.pxf.api.utilities.ColumnDescriptor;
 import org.greenplum.pxf.api.utilities.EnumAggregationType;
 import org.greenplum.pxf.api.utilities.Utilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MultiValueMap;
 
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -39,6 +40,17 @@ public class HttpRequestParser implements RequestParser<MultiValueMap<String, St
     private static final String PROFILE_SCHEME = "PROFILE-SCHEME";
 
     private final PluginConf pluginConf;
+    private BuildProperties buildProperties;
+
+    /**
+     * Sets the {@link BuildProperties} object
+     *
+     * @param buildProperties the build properties object
+     */
+    @Autowired
+    public void setBuildProperties(BuildProperties buildProperties) {
+        this.buildProperties = buildProperties;
+    }
 
     /**
      * Create a new instance of the HttpRequestParser with the given PluginConf
@@ -62,6 +74,13 @@ public class HttpRequestParser implements RequestParser<MultiValueMap<String, St
         RequestContext context = new RequestContext();
 
         // fill the Request-scoped RequestContext with parsed values
+        try {
+            context.setExtensionVersion(params.removeProperty("PXF-VERSION"));
+            context.setMinServerVersion(params.removeProperty("MIN-PXF-VERSION"));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(String.format("%s. Ensure PXF extension has been updated to the latest version.", e.getMessage()));
+        }
+        checkVersionHeaders(context);
 
         // whether we are in a fragmenter, read_bridge, or write_bridge scenario
         context.setRequestType(requestType);
@@ -206,6 +225,28 @@ public class HttpRequestParser implements RequestParser<MultiValueMap<String, St
         context.validate();
 
         return context;
+    }
+
+    /**
+     * checks if X-GP-PXF-VERSION is equal to the service version and logs a warning if there is a mismatch
+     * checks if X-GP-MIN-PXF-VERSION is less than the service version and returns an error otherwise
+     *
+     * @param context key-value map of HTTP headers from request
+     */
+    private void checkVersionHeaders(RequestContext context) {
+        ComparableVersion serverVersion = new ComparableVersion(buildProperties.getVersion());
+        ComparableVersion pxfVersion = new ComparableVersion(context.getExtensionVersion());
+        ComparableVersion minPxfVersion = new ComparableVersion(context.getMinServerVersion());
+
+        if (pxfVersion.compareTo(serverVersion) != 0) {
+            LOG.warn(String.format("request from PXF extension with version '%s' but PXF server is version '%s'", pxfVersion, serverVersion));
+        }
+
+        if (minPxfVersion.compareTo(serverVersion) == 1) {
+            String errMsg = String.format("PXF extension requested minimum PXF server version '%s'; PXF server version is '%s'. You may need to update your PXF server.", minPxfVersion, serverVersion);
+            LOG.error(errMsg);
+            throw new IllegalArgumentException(errMsg);
+        }
     }
 
     /**

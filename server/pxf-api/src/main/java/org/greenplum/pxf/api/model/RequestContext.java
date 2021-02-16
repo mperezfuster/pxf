@@ -283,6 +283,16 @@ public class RequestContext {
     private String user;
 
     /**
+     * The version of the postgres extension client
+     */
+    private String extensionVersion;
+
+    /**
+     * The minimum server version compatible with the postgres extension client
+     */
+    private String minServerVersion;
+
+    /**
      * Additional Configuration Properties to be added to configuration for
      * the request
      */
