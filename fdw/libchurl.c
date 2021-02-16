@@ -122,7 +122,6 @@ size_t		header_callback(char *buffer, size_t size, size_t nitems, void *userp);
 void		free_http_response(churl_context *context);
 void		compact_internal_buffer(churl_buffer *buffer);
 void		realloc_internal_buffer(churl_buffer *buffer, size_t required);
-bool		handle_special_error(long response, StringInfo err);
 char	   *get_http_error_msg(long http_ret_code, char *msg, char *curl_error_buffer);
 char	   *build_header_str(const char *format, const char *key, const char *value);
 
@@ -659,10 +658,9 @@ get_dest_address(CURL * curl_handle)
 	char	   *dest_url = NULL;
 
 	/* add dest url, if any, and curl was nice to tell us */
-	if (CURLE_OK == curl_easy_getinfo(curl_handle, CURLINFO_PRIMARY_IP, &dest_url) && dest_url)
+	if (CURLE_OK == curl_easy_getinfo(curl_handle, CURLINFO_EFFECTIVE_URL, &dest_url) && dest_url)
 	{
-		/* TODO: do not hardcode the port here */
-		return psprintf("'%s:%d'", dest_url, 5888);
+		return psprintf("'%s'", dest_url);
 	}
 	return dest_url;
 }
@@ -950,7 +948,10 @@ check_response_code(churl_context *context)
 		}
 		pfree(addr);
 
-		if (!handle_special_error(response_code, &err))
+        /* if an error other than 404, then response contains additional error messages
+         * from the pxf server, append them here.
+         */
+		if (response_code != 404)
 		{
 			/*
 			 * add detailed error message from the http response.
@@ -965,7 +966,7 @@ check_response_code(churl_context *context)
 			 */
 			if (strstr(http_error_msg, "instance does not contain any root resource classes") != NULL)
 			{
-				appendStringInfo(&err, " : PXF not correctly installed in CLASSPATH");
+				appendStringInfo(&err, ": PXF not correctly installed in CLASSPATH");
 			}
 			else
 			{
@@ -1191,18 +1192,4 @@ realloc_internal_buffer(churl_buffer *buffer, size_t required)
 		buffer->ptr = repalloc(buffer->ptr, n);
 
 	buffer->max = n;
-}
-
-bool
-handle_special_error(long response, StringInfo err)
-{
-	switch (response)
-	{
-		case 404:
-			appendStringInfo(err, ": PXF service could not be reached. PXF is not running in the tomcat container");
-			break;
-		default:
-			return false;
-	}
-	return true;
 }
