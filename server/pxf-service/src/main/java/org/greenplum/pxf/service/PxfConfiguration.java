@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.task.TaskExecutionProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.task.TaskExecutorBuilder;
@@ -17,6 +18,7 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.AsyncAnnotationBeanPostProcessor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
@@ -28,6 +30,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class PxfConfiguration implements WebMvcConfigurer {
 
     private static final Logger LOG = LoggerFactory.getLogger(PxfConfiguration.class);
+
+    @Autowired
+    private LoggingRequestInterceptor loggingRequestInterceptor;
 
     /**
      * Bean name of PXF's {@link TaskExecutor}.
@@ -55,6 +60,11 @@ public class PxfConfiguration implements WebMvcConfigurer {
         AsyncTaskExecutor taskExecutor = (AsyncTaskExecutor) this.beanFactory
                 .getBean(PXF_RESPONSE_STREAM_TASK_EXECUTOR);
         configurer.setTaskExecutor(taskExecutor);
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(loggingRequestInterceptor).addPathPatterns("/**");
     }
 
     /**
