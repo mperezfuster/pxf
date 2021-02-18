@@ -19,6 +19,7 @@ package org.greenplum.pxf.service.rest;
  * under the License.
  */
 
+import io.micrometer.core.annotation.Timed;
 import org.greenplum.pxf.api.model.RequestContext;
 import org.greenplum.pxf.service.FragmenterService;
 import org.greenplum.pxf.service.bridge.BridgeFactory;
@@ -39,6 +40,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
  */
 @RestController
 @RequestMapping("/pxf/" + Version.PXF_PROTOCOL_VERSION)
+@Timed
 public class BridgeResource extends BaseResource {
 
     private final BridgeFactory bridgeFactory;
@@ -64,6 +66,7 @@ public class BridgeResource extends BaseResource {
      * @return response object containing stream that will output records
      */
     @GetMapping(value = "/Bridge", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @Timed(extraTags = { "foo", "bar" })
     public ResponseEntity<StreamingResponseBody> read(
             @RequestHeader MultiValueMap<String, String> headers) throws Throwable {
 
