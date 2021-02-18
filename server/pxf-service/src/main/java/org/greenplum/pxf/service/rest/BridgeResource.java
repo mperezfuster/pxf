@@ -40,7 +40,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
  */
 @RestController
 @RequestMapping("/pxf/" + Version.PXF_PROTOCOL_VERSION)
-@Timed
+//@Timed
 public class BridgeResource extends BaseResource {
 
     private final BridgeFactory bridgeFactory;
@@ -66,7 +66,7 @@ public class BridgeResource extends BaseResource {
      * @return response object containing stream that will output records
      */
     @GetMapping(value = "/Bridge", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    @Timed(extraTags = { "foo", "bar" })
+    @Timed
     public ResponseEntity<StreamingResponseBody> read(
             @RequestHeader MultiValueMap<String, String> headers) throws Throwable {
 
