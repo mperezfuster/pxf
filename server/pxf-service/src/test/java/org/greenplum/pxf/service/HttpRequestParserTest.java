@@ -88,8 +88,7 @@ public class HttpRequestParserTest {
         parameters.add("X-GP-SESSION-ID", "0");
         parameters.add("X-GP-COMMAND-COUNT", "0");
 
-        parser = new HttpRequestParser(mockPluginConf);
-        parser.setBuildProperties(mockBuildProperties);
+        parser = new HttpRequestParser(mockPluginConf, mockBuildProperties);
     }
 
     @AfterEach

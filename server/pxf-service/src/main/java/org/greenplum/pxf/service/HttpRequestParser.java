@@ -40,25 +40,17 @@ public class HttpRequestParser implements RequestParser<MultiValueMap<String, St
     private static final String PROFILE_SCHEME = "PROFILE-SCHEME";
 
     private final PluginConf pluginConf;
-    private BuildProperties buildProperties;
-
-    /**
-     * Sets the {@link BuildProperties} object
-     *
-     * @param buildProperties the build properties object
-     */
-    @Autowired
-    public void setBuildProperties(BuildProperties buildProperties) {
-        this.buildProperties = buildProperties;
-    }
+    private final BuildProperties buildProperties;
 
     /**
      * Create a new instance of the HttpRequestParser with the given PluginConf
      *
      * @param pluginConf the plugin conf
+     * @param buildProperties the build properties object
      */
-    public HttpRequestParser(PluginConf pluginConf) {
+    public HttpRequestParser(PluginConf pluginConf, BuildProperties buildProperties) {
         this.pluginConf = pluginConf;
+        this.buildProperties = buildProperties;
     }
 
     @Override
