@@ -19,7 +19,6 @@ package org.greenplum.pxf.service.rest;
  * under the License.
  */
 
-import io.micrometer.core.annotation.Timed;
 import org.greenplum.pxf.api.model.RequestContext;
 import org.greenplum.pxf.service.FragmenterService;
 import org.greenplum.pxf.service.bridge.BridgeFactory;
@@ -65,7 +64,6 @@ public class BridgeResource extends BaseResource {
      * @return response object containing stream that will output records
      */
     @GetMapping(value = "/Bridge", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    //@Timed
     public ResponseEntity<StreamingResponseBody> read(
             @RequestHeader MultiValueMap<String, String> headers) throws Throwable {
 

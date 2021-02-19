@@ -19,7 +19,6 @@ package org.greenplum.pxf.service.rest;
  * under the License.
  */
 
-import io.micrometer.core.annotation.Timed;
 import org.apache.catalina.connector.ClientAbortException;
 import org.greenplum.pxf.api.model.RequestContext;
 import org.greenplum.pxf.api.utilities.Utilities;
@@ -112,7 +111,6 @@ public class WritableResource extends BaseResource {
      *                   initialize bridge or to write data
      */
     @PostMapping(value = "stream", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    //@Timed
     public ResponseEntity<String> stream(@RequestHeader MultiValueMap<String, String> headers,
                                          HttpServletRequest request) throws Exception {
 
