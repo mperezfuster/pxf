@@ -1,4 +1,4 @@
-package org.greenplum.pxf.service.rest;
+package org.greenplum.pxf.service.controller;
 
 import lombok.SneakyThrows;
 import org.apache.catalina.connector.ClientAbortException;
@@ -25,7 +25,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
-public class BridgeResponse implements StreamingResponseBody {
+public class ReadResponse implements StreamingResponseBody {
 
     private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
@@ -35,10 +35,10 @@ public class BridgeResponse implements StreamingResponseBody {
     private final RequestContext context;
     private final String dataDir;
 
-    public BridgeResponse(BridgeFactory bridgeFactory,
-                          SecurityService securityService,
-                          FragmenterService fragmenterService,
-                          RequestContext context) {
+    public ReadResponse(BridgeFactory bridgeFactory,
+                        SecurityService securityService,
+                        FragmenterService fragmenterService,
+                        RequestContext context) {
         this.securityService = securityService;
         this.bridgeFactory = bridgeFactory;
         this.fragmenterService = fragmenterService;
