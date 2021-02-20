@@ -1,6 +1,7 @@
 package org.greenplum.pxf.service.controller;
 
 import org.greenplum.pxf.api.model.RequestContext;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 /**
  * Service that reads data from external systems.
@@ -13,5 +14,5 @@ public interface ReadService {
      * @param context request context
      * @return read response instance
      */
-    ReadResponse getReadResponse(RequestContext context);
+    StreamingResponseBody getReadResponse(RequestContext context);
 }
