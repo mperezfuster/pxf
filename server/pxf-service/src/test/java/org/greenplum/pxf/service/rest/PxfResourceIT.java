@@ -3,6 +3,7 @@ package org.greenplum.pxf.service.rest;
 import com.google.common.base.Charsets;
 import org.greenplum.pxf.api.model.RequestContext;
 import org.greenplum.pxf.service.RequestParser;
+import org.greenplum.pxf.service.controller.ReadResponse;
 import org.greenplum.pxf.service.controller.ReadService;
 import org.greenplum.pxf.service.controller.WriteService;
 import org.junit.jupiter.api.BeforeAll;
@@ -12,8 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -49,13 +50,13 @@ public class PxfResourceIT {
 
     @Test
     public void testReadEndpoint() throws Exception {
-        StreamingResponseBody mockReadResponse = outputStream -> outputStream.write("Hello from read!".getBytes(Charsets.UTF_8));
+        ReadResponse mockReadResponse = outputStream -> outputStream.write("Hello from read!".getBytes(Charsets.UTF_8));
         when(mockParser.parseRequest(any(), eq(RequestContext.RequestType.READ_BRIDGE))).thenReturn(mockContext);
         when(mockReadService.getReadResponse(mockContext)).thenReturn(mockReadResponse);
 
-        mvc.perform(get("/pxf/read"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Hello from read!"));
+        ResultActions result = mvc.perform(get("/pxf/read")).andExpect(status().isOk());
+        Thread.sleep(200);
+        result.andExpect(content().string("Hello from read!"));
     }
 
     @Test
@@ -71,13 +72,14 @@ public class PxfResourceIT {
     @Test
     public void testLegacyBridgeEndpoint() throws Exception {
         //TODO: legacy endpoint should throw 500 exception with a hint, validate error message
-        StreamingResponseBody mockReadResponse = outputStream -> outputStream.write("Hello from read!".getBytes(Charsets.UTF_8));
+
+        ReadResponse mockReadResponse = outputStream -> outputStream.write("Hello from read!".getBytes(Charsets.UTF_8));
         when(mockParser.parseRequest(any(), eq(RequestContext.RequestType.READ_BRIDGE))).thenReturn(mockContext);
         when(mockReadService.getReadResponse(mockContext)).thenReturn(mockReadResponse);
 
-        mvc.perform(get("/pxf/v15/Bridge"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Hello from read!"));
+        ResultActions result = mvc.perform(get("/pxf/v15/Bridge")).andExpect(status().isOk());
+        Thread.sleep(200);
+        result.andExpect(content().string("Hello from read!"));
     }
 
     @Test

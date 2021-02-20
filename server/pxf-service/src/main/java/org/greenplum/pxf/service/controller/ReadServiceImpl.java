@@ -7,7 +7,6 @@ import org.greenplum.pxf.service.FragmenterService;
 import org.greenplum.pxf.service.bridge.BridgeFactory;
 import org.greenplum.pxf.service.security.SecurityService;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 /**
  * Implementation of the ReadService.
@@ -37,10 +36,10 @@ public class ReadServiceImpl extends BaseServiceImpl implements ReadService {
     }
 
     @Override
-    public StreamingResponseBody getReadResponse(RequestContext context) {
+    public ReadResponse getReadResponse(RequestContext context) {
         initConfiguration(context);
         // TODO: get unified session tracker id, use it in log statement
         log.debug("Returning BridgeResponse");
-        return new ReadResponse(bridgeFactory, securityService, fragmenterService, context);
+        return new ReadResponseImpl(bridgeFactory, securityService, fragmenterService, context);
     }
 }

@@ -78,7 +78,7 @@ public class PxfResource {
         RequestContext context = parser.parseRequest(headers, RequestType.READ_BRIDGE);
 
         // create a streaming class that will iterate over the records and write them to the output stream
-        StreamingResponseBody response = readService.getReadResponse(context);
+        StreamingResponseBody response = os -> readService.getReadResponse(context).writeTo(os);
 
         // return response entity that will use streaming response asynchronously
         return new ResponseEntity<>(response, HttpStatus.OK);

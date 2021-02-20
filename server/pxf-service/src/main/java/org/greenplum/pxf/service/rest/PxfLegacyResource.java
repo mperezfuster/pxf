@@ -17,6 +17,8 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import javax.servlet.http.HttpServletRequest;
 
+import static org.greenplum.pxf.api.model.RequestContext.RequestType;
+
 /**
  * Legacy PXF REST endpoint mapped to /pxf/v15 path
  */
@@ -56,10 +58,10 @@ public class PxfLegacyResource {
             @RequestHeader MultiValueMap<String, String> headers) {
 
         // parse incoming HTTP request
-        RequestContext context = parser.parseRequest(headers, RequestContext.RequestType.READ_BRIDGE);
+        RequestContext context = parser.parseRequest(headers, RequestType.READ_BRIDGE);
 
         // create a streaming class that will iterate over the records and write them to the output stream
-        StreamingResponseBody response = readService.getReadResponse(context);
+        StreamingResponseBody response = os -> readService.getReadResponse(context).writeTo(os);
 
         // return response entity that will use streaming response asynchronously
         return new ResponseEntity<>(response, HttpStatus.OK);
@@ -78,7 +80,7 @@ public class PxfLegacyResource {
                                          HttpServletRequest request) throws Exception {
 
         // parse incoming HTTP request
-        RequestContext context = parser.parseRequest(headers, RequestContext.RequestType.WRITE_BRIDGE);
+        RequestContext context = parser.parseRequest(headers, RequestType.WRITE_BRIDGE);
 
         // write data and get a response message
         String returnMsg = writeService.getWriteResponse(context, request.getInputStream());
