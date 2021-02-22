@@ -2,16 +2,21 @@ package org.greenplum.pxf.service.controller;
 
 import org.greenplum.pxf.api.model.RequestContext;
 
+import java.io.IOException;
+import java.io.OutputStream;
+
 /**
  * Service that reads data from external systems.
  */
 public interface ReadService {
 
     /**
-     * Returns response for a read request with the given context.
+     * Reads data from the external system specified by the RequestContext.
+     * The data is then written to the provided OutputStream.
      *
-     * @param context request context
-     * @return read response instance
+     * @param context     request context
+     * @param outputStream output stream to write data to
+     * @throws IOException if an error occurs
      */
-    ReadResponse getReadResponse(RequestContext context);
+    void readData(RequestContext context, OutputStream outputStream) throws IOException;
 }

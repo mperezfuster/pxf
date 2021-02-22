@@ -11,8 +11,8 @@ import org.greenplum.pxf.service.security.SecurityService;
 import org.springframework.stereotype.Service;
 
 import java.io.DataInputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.security.PrivilegedExceptionAction;
 
 /**
  * Implementation of the WriteService.
@@ -31,22 +31,16 @@ public class WriteServiceImpl extends BaseServiceImpl implements WriteService {
     public WriteServiceImpl(ConfigurationFactory configurationFactory,
                             BridgeFactory bridgeFactory,
                             SecurityService securityService) {
-        super(configurationFactory);
-        this.bridgeFactory = bridgeFactory;
-        this.securityService = securityService;
+        super("Write", configurationFactory, bridgeFactory, securityService);
     }
 
     @Override
-    public String getWriteResponse(RequestContext context, InputStream inputStream) throws Exception {
-        initConfiguration(context);
-
-        PrivilegedExceptionAction<Long> action = () -> readStream(context, inputStream);
-        Long totalWritten = securityService.doAs(context, action);
+    public String writeData(RequestContext context, InputStream inputStream) throws IOException {
+        OperationStats stats = processData(context, () -> readStream(context, inputStream));
 
         String censuredPath = Utilities.maskNonPrintables(context.getDataSource());
-        String returnMsg = String.format("wrote %d bulks to %s", totalWritten, censuredPath);
-        // TODO: get unified session tracker id, use it in log statement
-        log.debug(returnMsg);
+        String returnMsg = String.format("wrote %d bulks to %s", stats.getRecordCount(), censuredPath);
+        log.debug("{} {}", context.getId(), returnMsg);
 
         return returnMsg;
     }
@@ -56,50 +50,56 @@ public class WriteServiceImpl extends BaseServiceImpl implements WriteService {
      *
      * @param context     request context
      * @param inputStream input stream
-     * @return number of data bulks written
-     * @throws Exception if error occurs when writing data
+     * @return operation statistics
+     * @throws IOException if error occurs when writing data
      */
-    private Long readStream(RequestContext context, InputStream inputStream) throws Exception {
-        Bridge bridge = bridgeFactory.getBridge(context);
+    private OperationStats readStream(RequestContext context, InputStream inputStream) throws IOException {
+        Bridge bridge = getBridge(context);
 
-        // Open the output file
-        bridge.beginIteration();
-        long totalWritten = 0;
-        Exception ex = null;
+        long recordCount = 0;
+        IOException ex = null;
 
-        // dataStream will close automatically in the end of the try.
-        // inputStream is closed by dataStream.close().
+        // dataStream (and inputStream as the result) will close automatically at the end of the try block
         try (DataInputStream dataStream = new DataInputStream(inputStream)) {
+            // open the output file
+            bridge.beginIteration();
             while (bridge.setNext(dataStream)) {
-                ++totalWritten;
+                ++recordCount;
             }
         } catch (ClientAbortException cae) {
             // Occurs whenever client (GPDB) decides to end the connection
             if (log.isDebugEnabled()) {
                 // Stacktrace in debug
-                log.warn(String.format("Remote connection closed by GPDB (segment %s)", context.getSegmentId()), cae);
+                log.warn(String.format("%s Remote connection closed by GPDB (segment %s)",
+                        context.getId(), context.getSegmentId()), cae);
             } else {
-                log.warn("Remote connection closed by GPDB (segment {}) (Enable debug for stacktrace)", context.getSegmentId());
+                log.warn("{} Remote connection closed by GPDB (segment {}) (Enable debug for stacktrace)",
+                        context.getId(), context.getSegmentId());
             }
             ex = cae;
             // Re-throw the exception so Spring MVC is aware that an IO error has occurred
             throw cae;
+        } catch (IOException ioe) {
+            ex = ioe;
+            throw ioe;
         } catch (Exception e) {
-            log.error(String.format("Exception: totalWritten so far %d to %s", totalWritten, context.getDataSource()), e);
-            ex = e;
+            log.error(String.format("%s Exception: totalWritten so far %d to %s",
+                    context.getId(), recordCount, context.getDataSource()), e);
+            ex = new IOException(e.getMessage(), e);
             throw ex;
         } finally {
             try {
                 bridge.endIteration();
+            } catch (IOException ioe) {
+                ex = (ex == null) ? ioe : ex;
             } catch (Exception e) {
-                ex = (ex == null) ? e : ex;
+                ex = (ex == null) ? new IOException(e.getMessage(), e) : ex;
             }
         }
 
         // Report any errors we might have encountered
         if (ex != null) throw ex;
 
-        return totalWritten;
+        return OperationStats.builder().operation("write").recordCount(recordCount).build();
     }
-
 }
