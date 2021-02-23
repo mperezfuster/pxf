@@ -313,10 +313,16 @@ function install_pxf_server() {
 }
 
 function install_pxf_tarball() {
-    local tarball_dir=${PXF_PKG_DIR:-pxf_tarball}
-    tar -xzf "${tarball_dir}/"pxf-*.tar.gz -C /tmp
-    /tmp/pxf*/install_component
-    chown -R gpadmin:gpadmin "${PXF_HOME}"
+	if [[ -d pxf_artifact ]]; then
+		mkdir -p /tmp/pxf_installer/
+		cp pxf_artifact/*.rpm /tmp/pxf_installer
+		cp pxf_src/package/install_rpm /tmp/pxf_installer/install_component
+	else
+		local tarball_dir=${PXF_PKG_DIR:-pxf_tarball}
+		tar -xzf "${tarball_dir}/"pxf-*.tar.gz -C /tmp
+	fi
+	/tmp/pxf*/install_component
+	chown -R gpadmin:gpadmin "${PXF_HOME}"
 }
 
 function install_pxf_package() {

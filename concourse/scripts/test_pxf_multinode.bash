@@ -381,6 +381,9 @@ function run_pxf_automation() {
 	else
 		sed -i 's/sutFile=default.xml/sutFile=MultiNodesCluster.xml/g' pxf_src/automation/jsystem.properties
 	fi
+	if [[ ${PXF_VERSION} == 5 ]]; then
+	  chown -R gpadmin:gpadmin ~gpadmin/pxf
+	fi
 	chown -R gpadmin:gpadmin ~gpadmin/.ssh pxf_src/automation
 
 	cat > ~gpadmin/run_pxf_automation_test.sh <<-EOF
