@@ -481,8 +481,8 @@ function configure_pxf_server() {
 	# requires a login shell to source startup scripts (JAVA_HOME)
 	su --login gpadmin -c "${PXF_HOME}/bin/pxf register"
 
-	# prepare pxf if BASE_DIR is different from PXF_HOME
-	if [[ "$BASE_DIR" != "$PXF_HOME" ]]; then
+	# for PXF 6 prepare if BASE_DIR is different from PXF_HOME
+	if [[ ${PXF_VERSION} != "5" ]] && [[ "$BASE_DIR" != "$PXF_HOME" ]]; then
 		echo "Prepare PXF in $BASE_DIR"
 		su --login gpadmin -c "PXF_BASE=${BASE_DIR} pxf prepare"
 		export PXF_BASE=${BASE_DIR}
