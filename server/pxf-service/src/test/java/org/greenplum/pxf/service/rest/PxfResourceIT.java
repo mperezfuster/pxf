@@ -1,6 +1,7 @@
 package org.greenplum.pxf.service.rest;
 
 import com.google.common.base.Charsets;
+import org.greenplum.pxf.api.error.PxfRuntimeException;
 import org.greenplum.pxf.api.model.RequestContext;
 import org.greenplum.pxf.service.RequestParser;
 import org.greenplum.pxf.service.controller.ReadService;
@@ -13,10 +14,19 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
@@ -66,6 +76,18 @@ public class PxfResourceIT {
     }
 
     @Test
+    public void testLegacyFragmenterEndpoint() throws Exception {
+        ResultActions result = mvc.perform(
+                get("/pxf/v15/Fragmenter/getFragments").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isInternalServerError());
+        Thread.sleep(200);
+        result.andExpect(r -> assertTrue(r.getResolvedException() instanceof PxfRuntimeException))
+                .andExpect(r -> assertEquals("getFragments API (v15) is no longer supported by the server",
+                        r.getResolvedException().getMessage()));
+        result.andExpect(content().string("Upgrade PXF client library, did you run 'pxf register' ?"));
+    }
+
+    @Test
     public void testLegacyBridgeEndpoint() throws Exception {
         //TODO: legacy endpoint should throw 500 exception with a hint, validate error message
         when(mockParser.parseRequest(any(), eq(RequestContext.RequestType.READ_BRIDGE))).thenReturn(mockContext);
@@ -91,6 +113,18 @@ public class PxfResourceIT {
         @Bean
         ReadService createReadService() {
             return (ctx, out) -> out.write("Hello from read!".getBytes(Charsets.UTF_8));
+        }
+
+        @ControllerAdvice
+        public class ExceptionController {
+
+            @ExceptionHandler(PxfRuntimeException.class)
+            @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
+            @ResponseBody
+            public ResponseEntity<String> handleException(PxfRuntimeException ex) {
+                // print hint into the body so we can assert this in the tests
+                return new ResponseEntity<>(ex.getHint(), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
         }
     }
 }

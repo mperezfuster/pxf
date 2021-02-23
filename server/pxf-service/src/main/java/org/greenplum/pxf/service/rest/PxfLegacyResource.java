@@ -1,5 +1,6 @@
 package org.greenplum.pxf.service.rest;
 
+import org.greenplum.pxf.api.error.PxfRuntimeException;
 import org.greenplum.pxf.api.model.RequestContext;
 import org.greenplum.pxf.service.RequestParser;
 import org.greenplum.pxf.service.controller.ReadService;
@@ -40,11 +41,22 @@ public class PxfLegacyResource {
      * @param writeService write service implementation
      */
     public PxfLegacyResource(RequestParser<MultiValueMap<String, String>> parser,
-                       ReadService readService,
-                       WriteService writeService) {
+                             ReadService readService,
+                             WriteService writeService) {
         this.parser = parser;
         this.readService = readService;
         this.writeService = writeService;
+    }
+
+    /**
+     * REST endpoint for getting a list of fragments.
+     * @param headers http headers from request that carry all parameters
+     * @return response
+     */
+    @GetMapping(value = "/Fragmenter/getFragments", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> getFragments(@RequestHeader MultiValueMap<String, String> headers) {
+        throw new PxfRuntimeException("getFragments API (v15) is no longer supported by the server",
+                "Upgrade PXF client library, did you run 'pxf register' ?");
     }
 
     /**
@@ -54,8 +66,7 @@ public class PxfLegacyResource {
      * @return response object containing stream that will output records
      */
     @GetMapping(value = "/Bridge", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public ResponseEntity<StreamingResponseBody> read(
-            @RequestHeader MultiValueMap<String, String> headers) {
+    public ResponseEntity<StreamingResponseBody> read(@RequestHeader MultiValueMap<String, String> headers) {
 
         // parse incoming HTTP request
         RequestContext context = parser.parseRequest(headers, RequestType.READ_BRIDGE);
