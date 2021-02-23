@@ -92,7 +92,7 @@ check-env:
 	@if [ -z "$(PXF_HOME)" ]; then echo 'ERROR: PXF_HOME must be set'; exit 1; fi
 
 symlink_pxf_jars: check-env
-	@if [ $(PXF_VERSION) = 5 ]; then \
+	@if [ "$(PXF_VERSION)" = "5" ]; then \
 		if [ -d "$(PXF_HOME)/lib" ]; then \
 			rm -rf $(PXF_TMP_LIB) && \
 			mkdir -p $(PXF_TMP_LIB) && \
@@ -105,8 +105,8 @@ symlink_pxf_jars: check-env
 				fi; \
 			done; \
 			touch $(PXF_TMP_LIB)/pxf-extras.jar; \
-		fi
-	else
+		fi; \
+	else \
 		if [ -d "$(PXF_HOME)/application" ]; then \
 			rm -rf $(PXF_TMP_LIB) && \
 			mkdir -p $(PXF_TMP_LIB)/tmp && \
@@ -122,7 +122,7 @@ symlink_pxf_jars: check-env
 			touch $(PXF_TMP_LIB)/pxf-extras.jar && \
 			if [ -f "/tmp/pxf-extras-1.0.0.jar" ]; then cp /tmp/pxf-extras-1.0.0.jar $(PXF_TMP_LIB)/pxf-extras.jar; fi && \
 			rm -rf $(PXF_TMP_LIB)/tmp; \
-		fi
+		fi; \
 	fi
 
 test: check-env clean-logs symlink_pxf_jars sync_cloud_configs sync_jdbc_config
